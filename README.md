@@ -1,0 +1,1 @@
+Just a simple channel capacity calculator using measurements I collected at work.
