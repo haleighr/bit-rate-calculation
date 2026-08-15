@@ -1,64 +1,68 @@
 import math
 
-def calculate_bit_rate():
-    # First get all our recorded dBm measurements (i'll just make a list but we could also have a csv)
-    angles = [0,90,45,50,60,30,15,-90,-45,-27]
-    dbm_measurements = [-56,-66,-58,-59,-59.50,-57,-56,-76,-57,-56]
+angles = [0,90,45,50,60,30,15,-90,-45,-27]
 
-    # our noise floor in dBm
-    noise_floor_dbm = -92
-    # our bandwith in kHz
-    bandwith_khz = 50
-    bandwidth_hz = 1000 * bandwith_khz
-    
+dbm_measurements = [-56,-66,-58,-59,-59.50,-57,-56,-76,-57,-56]
 
-    #list for our snr measurements in dB
-    snr_measurements = []
+noise_floor_dbm = -92
 
-    # calculate the SNR for every dBm measurement
+bandwidth_khz = 50
+
+def calculate_bandwidth_hz(bandwidth_khz):
+    return bandwidth_khz * 1000
+
+def calculate_snr_dbs(dbm_measurements: list, noise_floor_dbm) -> list:
+    snr_db_measurements = []
     for dbm in dbm_measurements:
-        # signal - noise floor
         snr_value = dbm - noise_floor_dbm
-        snr_measurements.append(snr_value)
+        snr_db_measurements.append(snr_value)
+    return snr_db_measurements
 
-    # now we have to calculate the SNR ratio
-    # power ratio = 10 ^ (db/10)
+def calculate_snr_power_ratios(snr_measurements: list) -> list:
     snr_power_ratios = []
-
     for snr_db in snr_measurements:
         power_ratio = 10 ** (snr_db/10)
         snr_power_ratios.append(power_ratio)
 
+    return snr_power_ratios
 
-    
-
-    # use shannon theorem to find maximum rate
-    #  bandwith * log2(1 + snr)
-
+def calculate_max_bit_rate(bandwidth_hz, snr_power_ratios: list) -> list:
     max_data_speeds = []
-
-    # Output
-    print(f"Using a bandwith of {bandwidth_hz} Hz and a noise floor of {noise_floor_dbm} dBm\n")
-    print("-------------------------")
-
-    for angle,dbm,snr_ratio,snr_db in zip(angles,dbm_measurements,snr_power_ratios,snr_measurements):
+    for snr_ratio in snr_power_ratios:
         data_speed = bandwidth_hz * math.log2(1 + snr_ratio)
         max_data_speeds.append(data_speed)
-        print(f"At the angle {angle} degrees:\nThe dBm was: {dbm} dbM")
-        print(f"The SNR value is: {snr_db} dB")
-        print(f"The signal to noise ratio: {snr_ratio}")
-        print(f"Max data speed: {data_speed} bits per second")
-        print("-------------------------")
 
-    print(f"All angles we checked: {angles}")
-    print(f"All the dBm measurements: {dbm_measurements}")
-    print(f"Our SNR measurements are: {snr_measurements}")
-    print(f"Our SNR power ratios are: {snr_power_ratios}")
-    print(f"The maximum rates are: {max_data_speeds}")
-    
+    return max_data_speeds
+
+
 
 def main():
-    calculate_bit_rate()
+    bandwidth = calculate_bandwidth_hz(bandwidth_khz)
+
+    snr_dbs = calculate_snr_dbs(dbm_measurements, noise_floor_dbm)
+
+    snr_power_ratios = calculate_snr_power_ratios(snr_dbs)
+
+    max_bit_rates = calculate_max_bit_rate(bandwidth, snr_power_ratios)
+
+    print(f"BANDWIDTH USED: {bandwidth_khz} kHz ({bandwidth} Hz)")
+    print(f"NOISE FLOOR: {noise_floor_dbm} dBm")
+    print("-----------------------------------------------")
+
+
+    for angle, dbm, snr_db, snr_ratio, bit_rate in zip(
+        angles,
+        dbm_measurements,
+        snr_dbs,
+        snr_power_ratios,
+        max_bit_rates
+    ):
+        print(f"Angle: {angle} degrees")
+        print(f"dBm Measurement: {dbm} dBm")
+        print(f"Signal to Noise Values (in dB): {snr_db}")
+        print(f"Signal to Noise Power Ratios: {snr_ratio}")
+        print(f"Channel Capacity (Bits Per Second): {bit_rate}")
+        print("-----------------------------------------------")
 
 
 if __name__ == "__main__":
